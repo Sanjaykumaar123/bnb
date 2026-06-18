@@ -1,0 +1,31 @@
+{
+  "network": "bscMainnet",
+  "chainId": 56,
+  "deployedAt": "2026-04-22T11:12:18.304Z",
+  "contracts": {
+    "AegisRegistry": "0xb29f289D89921Ea784c8E8FDc04ced20cEcbE0B9",
+    "AegisVault": "0xb66b1d67d156Fb7FC21B6cb9Be573C118C37e4f4",
+    "DecisionLogger": "0x51Be618E3CA0b0B19FA0cC6c10960fF62783Da86",
+    "AegisTokenGate": "0xabbd2E13d5eda2D75D1599A7539a3083dfaba715",
+    "AegisScanner": "0x26D61a9cE682c051cD8DA343acE97a9C88Cf2b5D"
+  },
+  "operators": {
+    "deployer": "0xf910fC2fD395128A894e9754bE56479F05b54121",
+    "agentOperator": "0xf910fC2fD395128A894e9754bE56479F05b54121",
+    "scannerOperator": "0xf910fC2fD395128A894e9754bE56479F05b54121"
+  },
+  "externalProtocols": {
+    "VenusVBNB": "0xA07c5b74C9B40447a954e1466938b865b6BBea36",
+    "USDT": "0x55d398326f99059fF775485246999027B3197955",
+    "PancakeSwapRouter": "0x10ED43C718714eb63d5aA57B78B54704E256024E",
+    "UNIQ": "0xdd5f3e8c2cfc8444fac46744d0a4a85df03d7777"
+  },
+  "configuration": {
+    "registrationFee": "0.01",
+    "maxAgents": 10000,
+    "protocolFeeBps": 50,
+    "performanceFeeBps": 1500,
+    "minDeposit": "0.01",
+    "venusAllocationBps": 8000
+  }
+}
