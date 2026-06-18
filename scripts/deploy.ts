@@ -37,13 +37,13 @@ async function main() {
   console.log("   DecisionLogger deployed to:", loggerAddress);
 
   // ─── Deploy AegisTokenGate ────────────────────────────────
-  const uniqTokenAddress = process.env.UNIQ_TOKEN_ADDRESS || "";
+  const uniqTokenAddress = (process.env.UNIQ_TOKEN_ADDRESS || "").trim();
   let tokenGateAddress = "";
 
   if (uniqTokenAddress) {
     console.log("\n3b. Deploying AegisTokenGate...");
     const Gate = await ethers.getContractFactory("AegisTokenGate");
-    const gate = await Gate.deploy(uniqTokenAddress);
+    const gate = await Gate.deploy(ethers.getAddress(uniqTokenAddress));
     await gate.waitForDeployment();
     tokenGateAddress = await gate.getAddress();
     console.log("   AegisTokenGate deployed to:", tokenGateAddress);
