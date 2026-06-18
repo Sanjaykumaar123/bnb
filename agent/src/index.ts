@@ -588,8 +588,20 @@ class AegisAgent {
 
 // ─── Entry Point ──────────────────────────────────────────────
 
+import * as http from "http";
+
 async function main(): Promise<void> {
   validateConfig();
+
+  // Start a basic HTTP server to satisfy Render's Free Web Service health checks
+  const port = process.env.PORT || 3000;
+  http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("OK");
+  }).listen(port, () => {
+    console.log(`[Aegis Agent] Health check server listening on port ${port}`);
+  });
+
   const agent = new AegisAgent();
 
   // Graceful shutdown
