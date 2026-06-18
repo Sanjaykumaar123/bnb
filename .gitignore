@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+agent/node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+artifacts/
+cache/
+typechain-types/
+frontend/.next/
+frontend/out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+coverage.json
+
+# Deployment
+deployment.json
+ignition/deployments/
+
+# Misc
+*.log
+npm-debug.log*
+slither-output.json
+slither-sarif.json
