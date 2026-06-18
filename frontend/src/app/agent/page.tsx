@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Bot, Brain, Zap, Shield, Activity, TrendingUp, Eye, CheckCircle, AlertTriangle, Clock, Cpu, Network, BarChart3, GitBranch } from "lucide-react";
+import { Bot, Brain, Zap, Shield, Activity, TrendingUp, Eye, CheckCircle, Clock, Cpu, Network, BarChart3, GitBranch } from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────────────
 interface AgentLog { id: number; time: string; phase: string; message: string; type: "info"|"success"|"warn"|"ai"; }
@@ -15,7 +15,7 @@ const PHASES = [
 ];
 
 const SENTIMENTS = ["BULLISH","NEUTRAL","CAUTIOUS","BEARISH"];
-const ACTIONS = ["MONITOR","REBALANCE","ALERT","STOP_LOSS","HOLD"];
+
 
 function getRiskColor(score: number) {
   if (score >= 70) return "#ef4444";
@@ -96,7 +96,7 @@ export default function AgentBrainPage() {
   }, []);
 
   const riskColor = getRiskColor(state.riskScore);
-  const currentPhaseObj = PHASES[phaseIdx];
+
 
   return (
     <div style={{ minHeight:"100vh", background:"#0a0e17", padding:"24px 16px", fontFamily:"monospace" }}>
