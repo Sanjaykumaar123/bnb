@@ -1,315 +1,330 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { Bot, Brain, Zap, Shield, Activity, TrendingUp, Eye, CheckCircle, Clock, Cpu, Network, BarChart3, GitBranch } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Bot, Brain, Zap, Shield, Activity, TrendingUp, CheckCircle, Clock, Cpu, Network, BarChart3, GitBranch, RefreshCw, AlertTriangle, Eye, Droplets, Users, Server } from "lucide-react";
+import { DecisionTimeline, AgentStep } from "../../lib/decision-timeline-store";
 
-// ─── Types ─────────────────────────────────────────────────────
-interface AgentLog { id: number; time: string; phase: string; message: string; type: "info"|"success"|"warn"|"ai"; }
-interface AgentState { phase: string; cycle: number; bnbPrice: number; riskScore: number; sentiment: string; action: string; confidence: number; threats: string[]; uptime: number; }
+// ─── Real API types ─────────────────────────────────────────────
+interface HealthCheck { name: string; status: "ok"|"error"|"unconfigured"; latencyMs?: number; error?: string; }
+interface HealthData { status: string; checks: HealthCheck[]; timestamp: number; chain: string; version: string; }
 
-// ─── Simulated agent phases cycling continuously ────────────────
-const PHASES = [
-  { phase:"OBSERVE", icon: Eye, color:"#00d4f5", messages:["📡 Fetching BNB price from CoinMarketCap AI Hub…","📡 Reading PancakeSwap DEX on-chain prices…","📡 Scanning BSC block data & mempool…","📡 Pulling Venus Protocol lending metrics…"] },
-  { phase:"ANALYZE", icon: Brain, color:"#a855f7", messages:["🧠 Running Llama-3 LLM risk assessment…","🧠 Market Agent: volatility index computed","🧠 Whale Agent: large wallet movements detected","🧠 Liquidity Agent: pool depth analysis complete","🧠 Sentiment Agent: Fear & Greed index loaded"] },
-  { phase:"DECIDE", icon: GitBranch, color:"#f59e0b", messages:["⚡ Supervisor Agent orchestrating outputs…","⚡ Policy Engine evaluating guardian rules…","⚡ Risk threshold check: within bounds","⚡ Confidence score computed: 94%","⚡ Suggested action determined"] },
-  { phase:"EXECUTE", icon: Zap, color:"#22c55e", messages:["🔐 Logging decision hash on-chain (BSC)…","🔐 Updating Upstash Redis timeline store…","🔐 DRY RUN: simulation complete — no gas used","🔐 Heartbeat written — next cycle in 30s"] },
-];
-
-const SENTIMENTS = ["BULLISH","NEUTRAL","CAUTIOUS","BEARISH"];
-
-
-function getRiskColor(score: number) {
+// ─── Helpers ────────────────────────────────────────────────────
+function stepColor(step: string) {
+  if (step.includes("market")) return "#00d4f5";
+  if (step.includes("liquidity")) return "#22c55e";
+  if (step.includes("whale")) return "#f59e0b";
+  if (step.includes("sentiment")) return "#ec4899";
+  if (step.includes("risk")) return "#ef4444";
+  if (step.includes("supervisor") || step.includes("guardian")) return "#a855f7";
+  if (step.includes("execution") || step.includes("transaction")) return "#22c55e";
+  return "#00d4f5";
+}
+function stepIcon(step: string) {
+  if (step.includes("market")) return TrendingUp;
+  if (step.includes("liquidity")) return Droplets;
+  if (step.includes("whale")) return Users;
+  if (step.includes("sentiment")) return Brain;
+  if (step.includes("risk")) return Shield;
+  if (step.includes("supervisor") || step.includes("guardian")) return GitBranch;
+  if (step.includes("execution")) return Zap;
+  if (step.includes("transaction")) return CheckCircle;
+  return Eye;
+}
+function riskColor(score: number) {
   if (score >= 70) return "#ef4444";
   if (score >= 45) return "#f59e0b";
-  if (score >= 25) return "#00d4f5";
   return "#22c55e";
 }
+function timeAgo(ts: number) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  return `${Math.floor(s/3600)}h ago`;
+}
 
-// ─── Main Component ─────────────────────────────────────────────
+// ─── Main Page ──────────────────────────────────────────────────
 export default function AgentBrainPage() {
-  const [logs, setLogs] = useState<AgentLog[]>([]);
-  const [state, setState] = useState<AgentState>({
-    phase: "OBSERVE", cycle: 1, bnbPrice: 612, riskScore: 28,
-    sentiment: "NEUTRAL", action: "MONITOR", confidence: 87, threats: [], uptime: 0,
-  });
-  const [phaseIdx, setPhaseIdx] = useState(0);
-  const [msgIdx, setMsgIdx] = useState(0);
-  const [agentOnline, setAgentOnline] = useState(true);
-  const [pulseActive, setPulseActive] = useState(false);
-  const logRef = useRef<HTMLDivElement>(null);
-  const logId = useRef(0);
-  const uptimeRef = useRef(0);
+  const [timelines, setTimelines] = useState<DecisionTimeline[]>([]);
+  const [health, setHealth] = useState<HealthData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
+  const [selectedCycle, setSelectedCycle] = useState<DecisionTimeline | null>(null);
+  const [uptime, setUptime] = useState(0);
 
-  // Uptime counter
+  const fetchData = useCallback(async () => {
+    try {
+      const [tlRes, hRes] = await Promise.all([
+        fetch("/api/timeline?limit=10"),
+        fetch("/api/health"),
+      ]);
+      const tlData = await tlRes.json();
+      const hData = await hRes.json();
+      if (tlData.success) {
+        setTimelines(tlData.timelines || []);
+        if (tlData.timelines?.length > 0 && !selectedCycle) {
+          setSelectedCycle(tlData.timelines[0]);
+        }
+      }
+      setHealth(hData);
+    } catch {
+      // silent — health endpoint may vary
+    } finally {
+      setLoading(false);
+      setLastRefresh(Date.now());
+    }
+  }, [selectedCycle]);
+
   useEffect(() => {
-    const t = setInterval(() => { uptimeRef.current++; setState(s => ({ ...s, uptime: uptimeRef.current })); }, 1000);
+    fetchData();
+    const interval = setInterval(fetchData, 15000); // poll every 15s
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  useEffect(() => {
+    const t = setInterval(() => setUptime(u => u + 1), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Main agent simulation loop
-  useEffect(() => {
-    const tick = setInterval(() => {
-      const p = PHASES[phaseIdx];
-      const msg = p.messages[msgIdx % p.messages.length];
-      const newLog: AgentLog = {
-        id: logId.current++,
-        time: new Date().toLocaleTimeString(),
-        phase: p.phase,
-        message: msg,
-        type: p.phase === "EXECUTE" ? "success" : p.phase === "ANALYZE" ? "ai" : p.phase === "DECIDE" ? "warn" : "info",
-      };
-      setLogs(prev => [newLog, ...prev].slice(0, 40));
-      setPulseActive(true);
-      setTimeout(() => setPulseActive(false), 500);
+  const latest = timelines[0];
+  const latestCard = latest?.decisionCard;
+  const allSteps: AgentStep[] = selectedCycle?.steps || [];
 
-      const nextMsg = msgIdx + 1;
-      if (nextMsg >= p.messages.length) {
-        const nextPhase = (phaseIdx + 1) % PHASES.length;
-        setPhaseIdx(nextPhase);
-        setMsgIdx(0);
-        if (nextPhase === 0) {
-          // New cycle
-          const newPrice = 600 + Math.random() * 50;
-          const newRisk = Math.floor(Math.random() * 65) + 10;
-          const newSentiment = SENTIMENTS[Math.floor(Math.random() * SENTIMENTS.length)];
-          const newAction = newRisk > 60 ? "ALERT" : newRisk > 40 ? "REBALANCE" : "MONITOR";
-          const newThreats = newRisk > 50 ? ["High volatility detected", "Whale wallet movement"] : newRisk > 35 ? ["Moderate liquidity shift"] : [];
-          setState(s => ({
-            ...s, cycle: s.cycle + 1, bnbPrice: parseFloat(newPrice.toFixed(2)),
-            riskScore: newRisk, sentiment: newSentiment, action: newAction,
-            confidence: 80 + Math.floor(Math.random() * 18),
-            threats: newThreats,
-            phase: PHASES[nextPhase].phase,
-          }));
-        } else {
-          setState(s => ({ ...s, phase: PHASES[nextPhase].phase }));
-        }
-      } else {
-        setMsgIdx(nextMsg);
-      }
-    }, 1800);
-    return () => clearInterval(tick);
-  }, [phaseIdx, msgIdx]);
-
-  // Check real render health
-  useEffect(() => {
-    fetch("/api/health").then(r => setAgentOnline(r.ok)).catch(() => setAgentOnline(false));
-  }, []);
-
-  const riskColor = getRiskColor(state.riskScore);
-
+  // Derive real metrics from timeline data
+  const avgRisk = timelines.length > 0
+    ? Math.round(timelines.reduce((a, t) => a + (t.decisionCard?.riskScore || 0), 0) / timelines.length)
+    : 0;
+  const avgConf = timelines.length > 0
+    ? Math.round(timelines.reduce((a, t) => a + (t.decisionCard?.confidence || 0), 0) / timelines.length)
+    : 0;
+  const threatsFound = timelines.filter(t => t.decisionCard?.triggeredPolicy).length;
+  const isMultiAgent = latest?.multiAgentEnabled ?? false;
 
   return (
-    <div style={{ minHeight:"100vh", background:"#0a0e17", padding:"24px 16px", fontFamily:"monospace" }}>
-      <div style={{ maxWidth:1200, margin:"0 auto" }}>
+    <div style={{ minHeight: "100vh", background: "#0a0e17", padding: "24px 16px" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
 
         {/* ── Header ── */}
-        <div style={{ textAlign:"center", marginBottom:40 }}>
-          <div style={{ display:"inline-flex", alignItems:"center", gap:10, background:"rgba(0,212,245,0.06)", border:"1px solid rgba(0,212,245,0.2)", borderRadius:100, padding:"8px 20px", marginBottom:16 }}>
-            <div style={{ width:8, height:8, borderRadius:"50%", background:"#22c55e", boxShadow:"0 0 8px #22c55e", animation:"pulse 1.5s infinite" }} />
-            <span style={{ color:"#00d4f5", fontSize:12, fontWeight:700, letterSpacing:2 }}>AEGIS GUARDIAN — LIVE AI BRAIN</span>
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(0,212,245,0.06)", border: "1px solid rgba(0,212,245,0.2)", borderRadius: 100, padding: "8px 20px", marginBottom: 16 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 8px #22c55e", animation: "pulse 1.5s infinite" }} />
+            <span style={{ color: "#00d4f5", fontSize: 12, fontWeight: 700, letterSpacing: 2, fontFamily: "monospace" }}>AEGIS GUARDIAN — REAL-TIME AI BRAIN</span>
           </div>
-          <h1 style={{ fontSize:42, fontWeight:800, color:"white", margin:0, letterSpacing:-1 }}>
-            Autonomous Agent
-            <span style={{ background:"linear-gradient(135deg,#00d4f5,#a855f7)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}> Intelligence</span>
+          <h1 style={{ fontSize: 38, fontWeight: 800, color: "white", margin: 0 }}>
+            Live Agent <span style={{ background: "linear-gradient(135deg,#00d4f5,#a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Intelligence</span>
           </h1>
-          <p style={{ color:"#64748b", fontSize:14, marginTop:8 }}>Real-time multi-agent orchestration · Groq LLaMA-3 · CoinMarketCap Hub · BSC Testnet</p>
+          <p style={{ color: "#64748b", fontSize: 13, marginTop: 6 }}>
+            {loading ? "Loading agent data…" : timelines.length > 0
+              ? `${timelines.length} real decision cycles loaded · Refreshes every 15s · Last: ${timeAgo(lastRefresh)}`
+              : "Waiting for agent cycles — backend is running on Render"}
+          </p>
+          <button onClick={fetchData} style={{ marginTop: 10, background: "rgba(0,212,245,0.08)", border: "1px solid rgba(0,212,245,0.2)", color: "#00d4f5", padding: "6px 16px", borderRadius: 8, cursor: "pointer", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <RefreshCw style={{ width: 12, height: 12 }} /> Refresh Now
+          </button>
         </div>
 
-        {/* ── Status Bar ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:12, marginBottom:28 }}>
+        {/* ── Live Stats from Real Data ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12, marginBottom: 24 }}>
           {[
-            { label:"Agent Status", value: agentOnline ? "ONLINE":"OFFLINE", color: agentOnline?"#22c55e":"#ef4444", icon: Activity },
-            { label:"Current Cycle", value:`#${state.cycle}`, color:"#00d4f5", icon: Cpu },
-            { label:"BNB Price", value:`$${state.bnbPrice}`, color:"#f59e0b", icon: TrendingUp },
-            { label:"Risk Score", value:`${state.riskScore}/100`, color:riskColor, icon: Shield },
-            { label:"Confidence", value:`${state.confidence}%`, color:"#a855f7", icon: CheckCircle },
-            { label:"Uptime", value:`${Math.floor(state.uptime/60)}m ${state.uptime%60}s`, color:"#64748b", icon: Clock },
+            { label: "Agent Status", value: health ? (health.status === "healthy" ? "ONLINE" : health.status === "degraded" ? "DEGRADED" : "PARTIAL") : "CHECKING", color: health?.status === "healthy" ? "#22c55e" : "#f59e0b", icon: Activity },
+            { label: "Decision Cycles", value: timelines.length > 0 ? `${timelines.length} real` : "0 yet", color: "#00d4f5", icon: Cpu },
+            { label: "Avg Risk Score", value: timelines.length > 0 ? `${avgRisk}/100` : "—", color: riskColor(avgRisk), icon: Shield },
+            { label: "Avg Confidence", value: timelines.length > 0 ? `${avgConf}%` : "—", color: "#a855f7", icon: CheckCircle },
+            { label: "Threats Found", value: timelines.length > 0 ? `${threatsFound}` : "—", color: threatsFound > 0 ? "#ef4444" : "#22c55e", icon: AlertTriangle },
+            { label: "Multi-Agent", value: isMultiAgent ? "ACTIVE" : "LEGACY", color: isMultiAgent ? "#00d4f5" : "#64748b", icon: Network },
           ].map((s) => (
-            <div key={s.label} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:12, padding:"14px 16px" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
-                <s.icon style={{ width:12, height:12, color:s.color }} />
-                <span style={{ color:"#475569", fontSize:9, textTransform:"uppercase", letterSpacing:1.5 }}>{s.label}</span>
+            <div key={s.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "14px 16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                <s.icon style={{ width: 12, height: 12, color: s.color }} />
+                <span style={{ color: "#475569", fontSize: 9, textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "monospace" }}>{s.label}</span>
               </div>
-              <div style={{ color:s.color, fontSize:18, fontWeight:800 }}>{s.value}</div>
+              <div style={{ color: s.color, fontSize: 18, fontWeight: 800, fontFamily: "monospace" }}>{s.value}</div>
             </div>
           ))}
         </div>
 
-        {/* ── Main Grid ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20 }}>
-
-          {/* LEFT: Phase Visualizer */}
-          <div style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, padding:24 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:20 }}>
-              <Network style={{ width:16, height:16, color:"#00d4f5" }} />
-              <span style={{ color:"white", fontSize:13, fontWeight:700 }}>Observe → Analyze → Decide → Execute</span>
+        {/* ── No Data State ── */}
+        {!loading && timelines.length === 0 && (
+          <div style={{ textAlign: "center", padding: "60px 20px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, marginBottom: 24 }}>
+            <Bot style={{ width: 48, height: 48, color: "#334155", margin: "0 auto 16px" }} />
+            <h3 style={{ color: "white", fontSize: 18, margin: "0 0 8px" }}>Agent is Running — No Cycles Logged Yet</h3>
+            <p style={{ color: "#64748b", fontSize: 13, margin: 0 }}>The Render backend is live. Decision timelines are stored in Upstash Redis.<br />The first cycle data will appear here within 30 seconds of agent startup.</p>
+            <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 8, color: "#00d4f5", fontSize: 12, fontFamily: "monospace" }}>
+              <Server style={{ width: 14, height: 14 }} />
+              Render agent: <a href="https://jarvis-agent-lho3.onrender.com" target="_blank" rel="noreferrer" style={{ color: "#00d4f5" }}>jarvis-agent-lho3.onrender.com</a>
             </div>
-            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-              {PHASES.map((p, i) => {
-                const isActive = i === phaseIdx;
-                const isDone = i < phaseIdx;
-                const Icon = p.icon;
-                return (
-                  <div key={p.phase} style={{
-                    display:"flex", alignItems:"center", gap:14, padding:"14px 18px", borderRadius:12,
-                    background: isActive ? `${p.color}12` : "rgba(255,255,255,0.01)",
-                    border: `1px solid ${isActive ? p.color+"40" : "rgba(255,255,255,0.04)"}`,
-                    transition:"all 0.4s ease",
-                  }}>
-                    <div style={{
-                      width:36, height:36, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center",
-                      background: isActive ? `${p.color}20` : isDone ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.04)",
-                      border:`1px solid ${isActive ? p.color+"50" : isDone ? "#22c55e40" : "rgba(255,255,255,0.06)"}`,
-                      boxShadow: isActive ? `0 0 16px ${p.color}30` : "none",
-                    }}>
-                      {isDone ? <CheckCircle style={{ width:16, height:16, color:"#22c55e" }} />
-                        : <Icon style={{ width:16, height:16, color: isActive ? p.color : "#475569" }} />}
-                    </div>
-                    <div style={{ flex:1 }}>
-                      <div style={{ color: isActive ? p.color : isDone ? "#22c55e" : "#475569", fontSize:11, fontWeight:700, letterSpacing:1.5 }}>{p.phase}</div>
-                      {isActive && (
-                        <div style={{ color:"#94a3b8", fontSize:10, marginTop:3 }}>{p.messages[msgIdx % p.messages.length]}</div>
-                      )}
-                    </div>
-                    {isActive && (
-                      <div style={{ display:"flex", gap:3 }}>
-                        {[0,1,2].map(d => (
-                          <div key={d} style={{ width:5, height:5, borderRadius:"50%", background:p.color, animation:`bounce 0.8s ${d*0.2}s infinite` }} />
-                        ))}
+          </div>
+        )}
+
+        {timelines.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 20, marginBottom: 20 }}>
+
+            {/* LEFT — Cycle Selector + Latest Decision */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+              {/* Latest Decision Card */}
+              {latestCard && (
+                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                    <BarChart3 style={{ width: 15, height: 15, color: "#f59e0b" }} />
+                    <span style={{ color: "white", fontSize: 13, fontWeight: 700 }}>Latest Supervisor Decision</span>
+                    <span style={{ marginLeft: "auto", color: "#64748b", fontSize: 10, fontFamily: "monospace" }}>{timeAgo(latest.endTimestamp)}</span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {[
+                      { label: "Decision", value: latestCard.decision, color: "#00d4f5" },
+                      { label: "Risk Score", value: `${latestCard.riskScore}/100`, color: riskColor(latestCard.riskScore) },
+                      { label: "Confidence", value: `${latestCard.confidence}%`, color: "#a855f7" },
+                      { label: "Execution", value: latestCard.executionProvider, color: "#22c55e" },
+                      { label: "Tx Status", value: latestCard.transactionStatus.toUpperCase(), color: latestCard.transactionStatus === "executed" ? "#22c55e" : latestCard.transactionStatus === "dry_run" ? "#00d4f5" : "#64748b" },
+                    ].map(row => (
+                      <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "rgba(255,255,255,0.02)", borderRadius: 8 }}>
+                        <span style={{ color: "#64748b", fontSize: 11 }}>{row.label}</span>
+                        <span style={{ color: row.color, fontSize: 12, fontWeight: 700, fontFamily: "monospace" }}>{row.value}</span>
+                      </div>
+                    ))}
+                    {latestCard.triggeredPolicy && (
+                      <div style={{ padding: "10px 12px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8 }}>
+                        <div style={{ color: "#ef4444", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>⚠ Policy Triggered</div>
+                        <div style={{ color: "#f87171", fontSize: 10 }}>{latestCard.triggeredPolicy}</div>
+                      </div>
+                    )}
+                    {latestCard.transactionHash && latestCard.transactionHash !== "dry-run-tx" && (
+                      <div style={{ padding: "8px 12px", background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: 8 }}>
+                        <div style={{ color: "#22c55e", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>On-Chain Hash</div>
+                        <div style={{ color: "#4ade80", fontSize: 10, fontFamily: "monospace", wordBreak: "break-all" }}>{latestCard.transactionHash}</div>
                       </div>
                     )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              )}
 
-            {/* Risk Meter */}
-            <div style={{ marginTop:20, padding:"16px", background:"rgba(255,255,255,0.02)", borderRadius:12, border:"1px solid rgba(255,255,255,0.05)" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                <span style={{ color:"#64748b", fontSize:10, textTransform:"uppercase", letterSpacing:1 }}>AI Risk Assessment</span>
-                <span style={{ color:riskColor, fontSize:12, fontWeight:700 }}>{state.riskScore}/100</span>
-              </div>
-              <div style={{ height:6, background:"rgba(255,255,255,0.06)", borderRadius:100, overflow:"hidden" }}>
-                <div style={{ height:"100%", width:`${state.riskScore}%`, background:`linear-gradient(90deg,#22c55e,${riskColor})`, borderRadius:100, transition:"width 1s ease" }} />
-              </div>
-              <div style={{ display:"flex", justifyContent:"space-between", marginTop:6 }}>
-                <span style={{ color:"#22c55e", fontSize:9 }}>SAFE</span>
-                <span style={{ color:"#f59e0b", fontSize:9 }}>MEDIUM</span>
-                <span style={{ color:"#ef4444", fontSize:9 }}>CRITICAL</span>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT: Multi-Agent Cards */}
-          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-            <div style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, padding:20 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
-                <Bot style={{ width:15, height:15, color:"#a855f7" }} />
-                <span style={{ color:"white", fontSize:12, fontWeight:700 }}>Multi-Agent Swarm</span>
-              </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-                {[
-                  { name:"Market Agent", role:"BNB price & volume", color:"#00d4f5", active: phaseIdx >= 1 },
-                  { name:"Liquidity Agent", role:"DEX pool depth", color:"#22c55e", active: phaseIdx >= 1 },
-                  { name:"Whale Agent", role:"Large wallet scanner", color:"#f59e0b", active: phaseIdx >= 1 },
-                  { name:"Sentiment Agent", role:"Fear & Greed index", color:"#ec4899", active: phaseIdx >= 1 },
-                  { name:"Risk Agent", role:"Threat scoring", color:"#ef4444", active: phaseIdx >= 2 },
-                  { name:"Supervisor Agent", role:"Final orchestration", color:"#a855f7", active: phaseIdx >= 2 },
-                ].map((agent) => (
-                  <div key={agent.name} style={{
-                    padding:"10px 12px", borderRadius:10,
-                    background: agent.active ? `${agent.color}08` : "rgba(255,255,255,0.01)",
-                    border:`1px solid ${agent.active ? agent.color+"30" : "rgba(255,255,255,0.04)"}`,
-                  }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:3 }}>
-                      <div style={{ width:6, height:6, borderRadius:"50%", background: agent.active ? agent.color : "#334155", boxShadow: agent.active ? `0 0 6px ${agent.color}` : "none" }} />
-                      <span style={{ color: agent.active ? "white" : "#475569", fontSize:10, fontWeight:600 }}>{agent.name}</span>
-                    </div>
-                    <div style={{ color:"#475569", fontSize:9 }}>{agent.role}</div>
-                  </div>
-                ))}
+              {/* Cycle Selector */}
+              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 16 }}>
+                <div style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10, fontFamily: "monospace" }}>
+                  All Real Cycles ({timelines.length})
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 280, overflowY: "auto" }}>
+                  {timelines.map((tl) => {
+                    const isSelected = selectedCycle?.id === tl.id;
+                    const rc = riskColor(tl.decisionCard?.riskScore || 0);
+                    return (
+                      <button key={tl.id} onClick={() => setSelectedCycle(tl)} style={{
+                        display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", textAlign: "left",
+                        background: isSelected ? "rgba(0,212,245,0.08)" : "rgba(255,255,255,0.02)",
+                        border: `1px solid ${isSelected ? "rgba(0,212,245,0.3)" : "rgba(255,255,255,0.04)"}`,
+                      }}>
+                        <div style={{ width: 32, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: `${rc}15`, border: `1px solid ${rc}30`, color: rc, fontSize: 11, fontWeight: 700, fontFamily: "monospace", flexShrink: 0 }}>
+                          #{tl.cycleNumber}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ color: "white", fontSize: 11, fontWeight: 600 }}>{tl.decisionCard?.decision || "MONITOR"}</div>
+                          <div style={{ color: "#475569", fontSize: 9, fontFamily: "monospace" }}>{timeAgo(tl.startTimestamp)} · {tl.steps.length} steps</div>
+                        </div>
+                        <div style={{ color: rc, fontSize: 11, fontWeight: 700, fontFamily: "monospace", flexShrink: 0 }}>{tl.decisionCard?.riskScore}/100</div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            {/* Decision Output */}
-            <div style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16, padding:20, flex:1 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
-                <BarChart3 style={{ width:15, height:15, color:"#f59e0b" }} />
-                <span style={{ color:"white", fontSize:12, fontWeight:700 }}>Supervisor Decision Output</span>
-              </div>
-              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", background:"rgba(255,255,255,0.02)", borderRadius:10 }}>
-                  <span style={{ color:"#64748b", fontSize:10 }}>Market Sentiment</span>
-                  <span style={{ color: state.sentiment==="BULLISH"?"#22c55e":state.sentiment==="BEARISH"?"#ef4444":"#f59e0b", fontSize:11, fontWeight:700 }}>{state.sentiment}</span>
-                </div>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", background:"rgba(255,255,255,0.02)", borderRadius:10 }}>
-                  <span style={{ color:"#64748b", fontSize:10 }}>Suggested Action</span>
-                  <span style={{ color:"#00d4f5", fontSize:11, fontWeight:700 }}>{state.action}</span>
-                </div>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", background:"rgba(255,255,255,0.02)", borderRadius:10 }}>
-                  <span style={{ color:"#64748b", fontSize:10 }}>AI Confidence</span>
-                  <span style={{ color:"#a855f7", fontSize:11, fontWeight:700 }}>{state.confidence}%</span>
-                </div>
-                {state.threats.length > 0 ? (
-                  <div style={{ padding:"10px 14px", background:"rgba(239,68,68,0.06)", border:"1px solid rgba(239,68,68,0.15)", borderRadius:10 }}>
-                    <div style={{ color:"#ef4444", fontSize:9, textTransform:"uppercase", letterSpacing:1, marginBottom:5 }}>⚠ Threats Detected</div>
-                    {state.threats.map((t,i) => <div key={i} style={{ color:"#f87171", fontSize:10 }}>• {t}</div>)}
-                  </div>
-                ) : (
-                  <div style={{ padding:"10px 14px", background:"rgba(34,197,94,0.06)", border:"1px solid rgba(34,197,94,0.15)", borderRadius:10 }}>
-                    <div style={{ color:"#22c55e", fontSize:10 }}>✓ All Clear — No Threats Detected</div>
-                  </div>
+            {/* RIGHT — Real Step-by-Step Agent Trace */}
+            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                <Network style={{ width: 15, height: 15, color: "#00d4f5" }} />
+                <span style={{ color: "white", fontSize: 13, fontWeight: 700 }}>
+                  Agent Execution Trace — Cycle #{selectedCycle?.cycleNumber ?? "—"}
+                </span>
+                {selectedCycle?.multiAgentEnabled && (
+                  <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(168,85,247,0.1)", color: "#a855f7", border: "1px solid rgba(168,85,247,0.2)" }}>MULTI-AGENT</span>
                 )}
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* ── Live Log Terminal ── */}
-        <div style={{ background:"#040710", border:"1px solid rgba(0,212,245,0.15)", borderRadius:16, overflow:"hidden" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10, padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,0.05)", background:"rgba(0,212,245,0.03)" }}>
-            <div style={{ display:"flex", gap:6 }}>
-              <div style={{ width:10, height:10, borderRadius:"50%", background:"#ef4444" }} />
-              <div style={{ width:10, height:10, borderRadius:"50%", background:"#f59e0b" }} />
-              <div style={{ width:10, height:10, borderRadius:"50%", background:"#22c55e" }} />
-            </div>
-            <span style={{ color:"#00d4f5", fontSize:11, fontWeight:600 }}>aegis-agent — live terminal</span>
-            <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6 }}>
-              <div style={{ width:6, height:6, borderRadius:"50%", background: pulseActive?"#00d4f5":"#22c55e", transition:"background 0.3s", boxShadow: pulseActive?"0 0 10px #00d4f5":"0 0 6px #22c55e" }} />
-              <span style={{ color:"#475569", fontSize:10 }}>STREAMING</span>
+              {allSteps.length === 0 ? (
+                <div style={{ color: "#475569", fontSize: 12, textAlign: "center", padding: "40px 0" }}>Select a cycle to view its execution trace</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 520, overflowY: "auto" }}>
+                  {allSteps.map((step, i) => {
+                    const color = stepColor(step.step);
+                    const Icon = stepIcon(step.step);
+                    return (
+                      <div key={i} style={{
+                        padding: "12px 14px", borderRadius: 12,
+                        background: `${color}06`,
+                        border: `1px solid ${color}25`,
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: step.debugOutput ? 6 : 0 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: `${color}15`, border: `1px solid ${color}30`, flexShrink: 0 }}>
+                            <Icon style={{ width: 13, height: 13, color }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ color, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, fontFamily: "monospace" }}>{step.label}</span>
+                              {step.durationMs && <span style={{ color: "#334155", fontSize: 9, fontFamily: "monospace" }}>{step.durationMs}ms</span>}
+                            </div>
+                            <div style={{ color: "#94a3b8", fontSize: 11, marginTop: 2 }}>{step.summary}</div>
+                          </div>
+                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: step.status === "complete" ? "#22c55e" : step.status === "running" ? "#00d4f5" : "#334155", flexShrink: 0 }} />
+                        </div>
+                        {step.debugOutput && (
+                          <div style={{ marginTop: 6, padding: "6px 10px", background: "rgba(0,0,0,0.3)", borderRadius: 8, fontFamily: "monospace", fontSize: 10, color: "#64748b", lineHeight: 1.6 }}>
+                            {step.debugOutput}
+                          </div>
+                        )}
+                        {Object.keys(step.details).length > 0 && (
+                          <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                            {Object.entries(step.details).slice(0, 5).map(([k, v]) => (
+                              <span key={k} style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.04)", color: "#64748b", fontFamily: "monospace" }}>
+                                {k}: <span style={{ color: "#94a3b8" }}>{String(v)}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
-          <div ref={logRef} style={{ height:280, overflowY:"auto", padding:"16px 20px", display:"flex", flexDirection:"column", gap:6 }}>
-            {logs.length === 0 && (
-              <div style={{ color:"#334155", fontSize:11 }}>Initializing Aegis Guardian Agent…</div>
-            )}
-            {logs.map((log) => (
-              <div key={log.id} style={{ display:"flex", gap:12, alignItems:"flex-start", animation:"fadeInDown 0.3s ease" }}>
-                <span style={{ color:"#334155", fontSize:10, minWidth:70, flexShrink:0 }}>{log.time}</span>
-                <span style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:4, minWidth:58, textAlign:"center", flexShrink:0,
-                  background: log.type==="success"?"rgba(34,197,94,0.12)":log.type==="ai"?"rgba(168,85,247,0.12)":log.type==="warn"?"rgba(245,158,11,0.12)":"rgba(0,212,245,0.1)",
-                  color: log.type==="success"?"#22c55e":log.type==="ai"?"#a855f7":log.type==="warn"?"#f59e0b":"#00d4f5" }}>
-                  {log.phase}
-                </span>
-                <span style={{ color:"#94a3b8", fontSize:11, lineHeight:1.5 }}>{log.message}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
 
-        {/* ── Tech Stack Footer ── */}
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8, justifyContent:"center", marginTop:24 }}>
-          {["Groq LLaMA-3","CoinMarketCap AI Hub","Trust Wallet Agent Kit (TWAK)","BNB Smart Chain","PancakeSwap V3","Venus Protocol","Upstash Redis","Next.js 15"].map(t => (
-            <span key={t} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", color:"#64748b", fontSize:10, padding:"4px 10px", borderRadius:100 }}>{t}</span>
+        {/* ── Health Dashboard ── */}
+        {health && (
+          <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <Server style={{ width: 15, height: 15, color: "#00d4f5" }} />
+              <span style={{ color: "white", fontSize: 13, fontWeight: 700 }}>Live Infrastructure Health</span>
+              <span style={{ marginLeft: "auto", padding: "3px 10px", borderRadius: 100, fontSize: 10, fontWeight: 700,
+                background: health.status === "healthy" ? "rgba(34,197,94,0.1)" : "rgba(245,158,11,0.1)",
+                color: health.status === "healthy" ? "#22c55e" : "#f59e0b",
+                border: `1px solid ${health.status === "healthy" ? "rgba(34,197,94,0.2)" : "rgba(245,158,11,0.2)"}`,
+              }}>{health.status.toUpperCase()}</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 10 }}>
+              {health.checks.map((c) => (
+                <div key={c.name} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.02)", border: `1px solid ${c.status === "ok" ? "rgba(34,197,94,0.15)" : c.status === "error" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.05)"}` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: c.status === "ok" ? "#22c55e" : c.status === "error" ? "#ef4444" : "#64748b" }} />
+                    <span style={{ color: "white", fontSize: 11, fontWeight: 600 }}>{c.name}</span>
+                  </div>
+                  <div style={{ color: "#475569", fontSize: 10, fontFamily: "monospace" }}>
+                    {c.latencyMs ? `${c.latencyMs}ms` : c.status}
+                    {c.error && <span style={{ color: "#ef4444" }}> · {c.error.slice(0, 40)}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Tech Stack ── */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+          {["Groq LLaMA-3", "CoinMarketCap AI Hub", "Trust Wallet Agent Kit", "BNB Smart Chain", "PancakeSwap V3", "Venus Protocol", "Upstash Redis", "Render (Backend)", "Vercel (Frontend)"].map(t => (
+            <span key={t} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", color: "#64748b", fontSize: 10, padding: "4px 10px", borderRadius: 100 }}>{t}</span>
           ))}
         </div>
       </div>
-
-      <style>{`
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
-        @keyframes fadeInDown { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
-      `}</style>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }`}</style>
     </div>
   );
 }
