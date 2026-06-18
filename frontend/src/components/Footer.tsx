@@ -12,11 +12,11 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-3">
-              <Image src="/logo.png" alt="Aegis Protocol" width={24} height={24} className="h-6 w-6 object-contain" />
-              <span className="text-sm font-semibold text-white">Aegis Protocol</span>
+              <Image src="/logo.png" alt="JarvisBNB" width={24} height={24} className="h-6 w-6 object-contain" />
+              <span className="text-sm font-semibold text-white">Jarvis<span style={{ color: "var(--bnb)" }}>BNB</span></span>
             </div>
             <p className="text-xs leading-relaxed mb-3" style={{ color: "var(--text-muted)" }}>
-              AI-powered DeFi guardian on BNB Chain. Scan tokens, monitor wallets, and earn protected yield.
+              Autonomous AI portfolio guardian &amp; trading intelligence on BNB Chain. Scan tokens, monitor wallets, and earn protected yield.
             </p>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full pulse-live" style={{ background: "var(--green)" }} />
@@ -48,7 +48,7 @@ export default function Footer() {
             <div className="space-y-2">
               {[
                 { href: "/whitepaper", label: "Whitepaper", ext: false },
-                { href: "https://github.com/Tonyflam/aegis-protocol", label: "GitHub", ext: true },
+                { href: "https://github.com/Sanjaykumaar123/bnb", label: "GitHub", ext: true },
                 { href: `https://bscscan.com/token/${CONTRACTS.UNIQ_TOKEN}`, label: "$UNIQ on BSCScan", ext: true },
                 { href: `https://flap.sh/bnb/${CONTRACTS.UNIQ_TOKEN}`, label: "Buy $UNIQ", ext: true },
               ].map((link) => (
@@ -67,7 +67,7 @@ export default function Footer() {
               {[
                 { href: "https://x.com/uniq_minds", label: "Twitter / X" },
                 { href: "https://t.me/aegis_protocol_bot", label: "Telegram Bot" },
-                { href: "https://github.com/Tonyflam/aegis-protocol", label: "Contribute" },
+                { href: "https://github.com/Sanjaykumaar123/bnb", label: "Contribute" },
               ].map((link) => (
                 <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
                   className="block text-xs transition-colors hover:text-white" style={{ color: "var(--text-muted)" }}>

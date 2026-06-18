@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Guardian Shield — AI Wallet Monitoring | Aegis Protocol",
+  title: "Guardian Shield — AI Wallet Monitoring | JarvisBNB",
   description:
-    "Connect your wallet and let Aegis Guardian AI monitor your holdings 24/7. Get real-time risk alerts, honeypot detection, and Telegram notifications for your BNB Chain portfolio.",
+    "Connect your wallet and let JarvisBNB's Guardian AI monitor your holdings 24/7. Get real-time risk alerts, honeypot detection, natural language policies, and Telegram notifications for your BNB Chain portfolio.",
   openGraph: {
-    title: "Guardian Shield — AI Wallet Monitoring | Aegis Protocol",
+    title: "Guardian Shield — AI Wallet Monitoring | JarvisBNB",
     description:
       "AI-powered 24/7 wallet monitoring with real-time risk alerts on BNB Chain.",
-    url: "https://aegisguardian.xyz/guardian",
+    url: "https://jarvisbnb.xyz/guardian",
   },
 };
 

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://aegisguardian.xyz";
+  const base = "https://jarvisbnb.xyz";
   return [
     { url: base, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
     { url: `${base}/scanner`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },

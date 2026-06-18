@@ -139,7 +139,7 @@ export default function ScanResultPage({ params }: { params: { address: string }
       topFlags ? `\nFlags: ${topFlags}` : "",
       `\nTax: ${result.buyTax.toFixed(1)}% buy / ${result.sellTax.toFixed(1)}% sell`,
       `\nLiquidity: ${formatUsd(result.liquidityUsd)}`,
-      `\n\n🛡️ Scanned with Aegis Protocol`,
+      `\n\n🤖 Scanned with JarvisBNB`,
     ].filter(Boolean).join("");
     window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(lines)}`, "_blank", "noopener,noreferrer");
   };
@@ -305,7 +305,7 @@ export default function ScanResultPage({ params }: { params: { address: string }
 
       {/* Powered by */}
       <p className="text-center text-[11px] mt-8" style={{ color: "var(--text-muted)" }}>
-        Powered by Aegis Protocol · honeypot.is · GoPlusLabs · PancakeSwap
+        Powered by JarvisBNB · honeypot.is · GoPlusLabs · PancakeSwap
       </p>
     </div>
   );

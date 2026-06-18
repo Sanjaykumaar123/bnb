@@ -128,8 +128,8 @@ export default function Home() {
         <div ref={stepsStagger.ref} className={`stagger-parent ${stepsStagger.isVisible ? "visible" : ""} grid md:grid-cols-3 gap-6`}>
           {[
             { num: "01", icon: Search, title: "Token Scanner", desc: "Paste any BSC token address for a full risk report — or connect your wallet to scan ALL your holdings at once. Honeypot detection, tax analysis, liquidity checks, and contract security.", href: "/scanner", color: "var(--accent)" },
-            { num: "02", icon: Shield, title: "Guardian Shield", desc: "Activate always-on monitoring. Guardian Shield auto-refreshes every 60 seconds, watching for rug pull signals, whale dumps, liquidity pulls, and dev wallet movements.", href: "/guardian", color: "var(--purple)" },
-            { num: "03", icon: Lock, title: "Protected Vault", desc: "Deposit BNB into the Aegis Vault. Earn yield from Venus Protocol lending with AI-powered stop-loss protection. Every decision logged on-chain for full transparency.", href: "/vault", color: "var(--green)" },
+            { num: "02", icon: Shield, title: "Guardian Shield", desc: "Activate always-on monitoring. JarvisBNB auto-refreshes every 60 seconds, watching for rug pull signals, whale dumps, liquidity pulls, and dev wallet movements.", href: "/guardian", color: "var(--purple)" },
+            { num: "03", icon: Lock, title: "Protected Vault", desc: "Deposit BNB into the JarvisBNB Vault. Earn yield from Venus Protocol lending with AI-powered stop-loss protection. Every decision logged on-chain for full transparency.", href: "/vault", color: "var(--green)" },
           ].map((step, i) => (
             <Link key={i} href={step.href}
               className="stagger-child group relative card p-8 hover:border-[var(--border-hover)] transition-all duration-300"
@@ -314,7 +314,7 @@ export default function Home() {
               Earn Yield. <span style={{ color: "var(--green)" }}>Stay Protected.</span>
             </h2>
             <p className="text-base leading-relaxed mb-8" style={{ color: "var(--text-secondary)" }}>
-              Deposit BNB into the Aegis Vault. Your funds earn real yield from Venus Protocol lending.
+              Deposit BNB into the JarvisBNB Vault. Your funds earn real yield from Venus Protocol lending.
               Smart contracts include stop-loss protection and AI agent authorization.
               Every protection decision is immutably logged on-chain.
             </p>
@@ -620,7 +620,7 @@ export default function Home() {
             <div className="flex items-center justify-center gap-6 mt-10">
               <a href="https://x.com/uniq_minds" target="_blank" rel="noopener noreferrer"
                 className="text-sm transition-colors hover:text-white" style={{ color: "var(--text-muted)" }}>Twitter</a>
-              <a href="https://github.com/Tonyflam/aegis-protocol" target="_blank" rel="noopener noreferrer"
+              <a href="https://github.com/Sanjaykumaar123/bnb" target="_blank" rel="noopener noreferrer"
                 className="text-sm transition-colors hover:text-white" style={{ color: "var(--text-muted)" }}>GitHub</a>
               <a href={`https://bscscan.com/token/${CONTRACTS.UNIQ_TOKEN}`} target="_blank" rel="noopener noreferrer"
                 className="text-sm transition-colors hover:text-white" style={{ color: "var(--text-muted)" }}>$UNIQ on BSCScan</a>

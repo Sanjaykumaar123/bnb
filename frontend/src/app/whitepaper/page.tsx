@@ -1,14 +1,14 @@
-// Aegis Protocol — Whitepaper page (renders /whitepaper)
+// JarvisBNB — Whitepaper page (renders /whitepaper)
 
 export const metadata = {
-  title: "Aegis Protocol Whitepaper | AI-Native DeFi Security on BNB Chain",
+  title: "JarvisBNB Whitepaper | Autonomous AI Portfolio Guardian on BNB Chain",
   description:
-    "The technical and economic design of Aegis Protocol — Scanner, Guardian, Vault, $UNIQ token, and the autonomous AI agent securing DeFi on BNB Chain.",
+    "The technical and economic design of JarvisBNB — Scanner, Guardian, Vault, $UNIQ token, and the autonomous multi-agent AI system securing DeFi on BNB Chain.",
   openGraph: {
-    title: "Aegis Protocol Whitepaper",
-    description: "AI-Native DeFi Security on BNB Chain — full technical paper.",
-    url: "https://aegisguardian.xyz/whitepaper",
-    siteName: "Aegis Protocol",
+    title: "JarvisBNB Whitepaper",
+    description: "Autonomous AI Portfolio Guardian & Trading Intelligence on BNB Chain — full technical paper.",
+    url: "https://jarvisbnb.xyz/whitepaper",
+    siteName: "JarvisBNB",
     type: "article",
   },
 };
@@ -33,17 +33,17 @@ export default function WhitepaperPage() {
         <div className="text-xs tracking-[0.2em] uppercase mb-3" style={{ color: "var(--text-muted)" }}>
           Whitepaper · v1.0 · April 2026
         </div>
-        <h1 className="text-4xl font-bold mb-3 text-white">Aegis Protocol</h1>
+        <h1 className="text-4xl font-bold mb-3 text-white">JarvisBNB</h1>
         <p className="text-lg" style={{ color: "var(--text-muted)" }}>
-          AI-Native DeFi Security Infrastructure on BNB Chain
+          Autonomous AI Portfolio Guardian &amp; Trading Intelligence on BNB Chain
         </p>
         <div className="text-xs mt-4" style={{ color: "var(--text-muted)" }}>
-          UnIQ Minds Labs · aegisguardian.xyz
+          UnIQ Minds Labs · jarvisbnb.xyz
         </div>
         <div className="mt-6 flex justify-center gap-3 text-xs">
           <a href="/" className="underline" style={{ color: "var(--bnb)" }}>← Back to App</a>
           <span style={{ color: "var(--text-muted)" }}>·</span>
-          <a href="https://github.com/Tonyflam/aegis-protocol" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "var(--bnb)" }}>GitHub</a>
+          <a href="https://github.com/Sanjaykumaar123/bnb" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "var(--bnb)" }}>GitHub</a>
         </div>
       </header>
 
@@ -52,15 +52,15 @@ export default function WhitepaperPage() {
         <p className={p}>
           Decentralized finance on BNB Chain processes billions in daily volume yet remains hostile to
           non-expert users. Rug pulls, honeypots, malicious contract upgrades, and protocol exploits drained
-          an estimated $2B+ across BSC in 2024–2025 alone. Aegis Protocol introduces the first AI-native,
-          fully on-chain security layer for BNB Chain DeFi: an autonomous agent that detects threats,
+          an estimated $2B+ across BSC in 2024–2025 alone. JarvisBNB introduces a fully autonomous, multi-agent
+          AI portfolio guardian and trading intelligence engine for BNB Chain DeFi: an AI system that detects threats,
           monitors wallets continuously, and protects user capital — with all decisions cryptographically
           anchored on-chain.
         </p>
         <p className={p}>
-          Aegis is composed of three integrated products (<strong className="text-white">Scanner</strong>,{" "}
+          JarvisBNB is composed of three integrated products (<strong className="text-white">Scanner</strong>,{" "}
           <strong className="text-white">Guardian</strong>, <strong className="text-white">Vault</strong>),
-          powered by a single off-chain AI agent and a suite of smart contracts gated by the{" "}
+          powered by a multi-agent off-chain AI supervisor and a suite of smart contracts gated by the{" "}
           <strong className="text-white">$UNIQ</strong> utility token. The system is non-custodial,
           transparent, and designed to make BNB Chain the safest high-throughput chain for retail DeFi.
         </p>
@@ -282,7 +282,7 @@ export default function WhitepaperPage() {
         <h3 className={h3}>5.4 Audit Status</h3>
         <p className={p}>
           All contracts pass an internal 170-test suite. External audit is in progress; results will be
-          published at <code style={codeStyle}>aegisguardian.xyz/audits</code> upon completion.
+          published at <code style={codeStyle}>jarvisbnb.xyz/audits</code> upon completion.
         </p>
       </section>
 
@@ -334,8 +334,8 @@ export default function WhitepaperPage() {
       <section>
         <h2 className={h2}>9. Resources</h2>
         <ul className={list}>
-          <li>Website: <a href="https://aegisguardian.xyz" className="underline" style={{ color: "var(--bnb)" }}>aegisguardian.xyz</a></li>
-          <li>GitHub: <a href="https://github.com/Tonyflam/aegis-protocol" className="underline" style={{ color: "var(--bnb)" }}>github.com/Tonyflam/aegis-protocol</a></li>
+          <li>Website: <a href="https://jarvisbnb.xyz" className="underline" style={{ color: "var(--bnb)" }}>jarvisbnb.xyz</a></li>
+          <li>GitHub: <a href="https://github.com/Sanjaykumaar123/bnb" className="underline" style={{ color: "var(--bnb)" }}>github.com/Sanjaykumaar123/bnb</a></li>
           <li>Telegram: <a href="https://t.me/UnIQMindsAegis" className="underline" style={{ color: "var(--bnb)" }}>t.me/UnIQMindsAegis</a></li>
           <li>Bot: <a href="https://t.me/aegis_protocol_bot" className="underline" style={{ color: "var(--bnb)" }}>t.me/aegis_protocol_bot</a></li>
           <li>X: <a href="https://x.com/uniq_minds" className="underline" style={{ color: "var(--bnb)" }}>@uniq_minds</a></li>
@@ -344,7 +344,7 @@ export default function WhitepaperPage() {
       </section>
 
       <footer className="mt-16 pt-8 border-t border-white/10 text-center text-xs" style={{ color: "var(--text-muted)" }}>
-        Aegis Protocol Whitepaper · v1.0 · Published April 26, 2026 · © UnIQ Minds Labs · MIT Licensed
+        JarvisBNB Whitepaper · v1.0 · Published April 26, 2026 · © UnIQ Minds Labs · MIT Licensed
       </footer>
     </article>
   );

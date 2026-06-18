@@ -57,14 +57,14 @@ export async function POST(request: NextRequest) {
     await sendMessage(
       chatId,
       [
-        `🛡️ <b>Welcome to Aegis Protocol, ${firstName}!</b>`,
+        `🛡️ <b>Welcome to JarvisBNB, ${firstName}!</b>`,
         ``,
         `Aegis is AI-powered DeFi protection on BNB Chain. This bot sends you real-time security alerts for your wallet.`,
         ``,
         `<b>Your Chat ID:</b> <code>${chatId}</code>`,
         ``,
         `<b>How to link your wallet:</b>`,
-        `1. Visit <a href="https://aegisguardian.xyz/guardian">aegisguardian.xyz/guardian</a>`,
+        `1. Visit <a href="https://jarvisbnb.xyz/guardian">jarvisbnb.xyz/guardian</a>`,
         `2. Connect your wallet`,
         `3. Click "Link Telegram" in the sidebar`,
         `4. Paste your Chat ID: <code>${chatId}</code>`,
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       ].join("\n"),
     );
   } else if (text === "/myid") {
-    await sendMessage(chatId, `Your Chat ID: <code>${chatId}</code>\n\nPaste this on aegisguardian.xyz/guardian to link your wallet.`);
+    await sendMessage(chatId, `Your Chat ID: <code>${chatId}</code>\n\nPaste this on jarvisbnb.xyz/guardian to link your wallet.`);
   } else if (text === "/help") {
     await sendMessage(
       chatId,
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         `• 🛡️ <b>Guardian</b> — Wallet monitoring + alerts`,
         `• 🏦 <b>Vault</b> — Earn Venus yield with AI stop-loss`,
         ``,
-        `Website: <a href="https://aegisguardian.xyz">aegisguardian.xyz</a>`,
+        `Website: <a href="https://jarvisbnb.xyz">jarvisbnb.xyz</a>`,
       ].join("\n"),
     );
   } else if (text === "/status") {
@@ -107,13 +107,13 @@ export async function POST(request: NextRequest) {
         ``,
         `Your Chat ID: <code>${chatId}</code>`,
         ``,
-        `To check if your wallet is linked, visit <a href="https://aegisguardian.xyz/guardian">aegisguardian.xyz/guardian</a> and look at the Telegram section.`,
+        `To check if your wallet is linked, visit <a href="https://jarvisbnb.xyz/guardian">jarvisbnb.xyz/guardian</a> and look at the Telegram section.`,
       ].join("\n"),
     );
   } else {
     await sendMessage(
       chatId,
-      `I only respond to commands. Try /start, /myid, or /help.\n\nVisit <a href="https://aegisguardian.xyz">aegisguardian.xyz</a> to use the full app.`,
+      `I only respond to commands. Try /start, /myid, or /help.\n\nVisit <a href="https://jarvisbnb.xyz">jarvisbnb.xyz</a> to use the full app.`,
     );
   }
 

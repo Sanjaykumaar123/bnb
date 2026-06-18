@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🛡️ Aegis Protocol
+# 🤖 JarvisBNB
 
-### DeFi Security Toolkit for BNB Chain — Scan, Monitor, Protect
+### Autonomous AI Portfolio Guardian & Trading Intelligence on BNB Chain
 
 [![Built for BNB Chain](https://img.shields.io/badge/Built_for-BNB_Chain-F0B90B?style=for-the-badge&logo=binance)](https://www.bnbchain.org/)
 [![Good Vibes Only](https://img.shields.io/badge/Good_Vibes_Only-Top_10_Winner-00e0ff?style=for-the-badge)](https://openclaw.xyz)
@@ -11,17 +11,17 @@
 [![Deployed](https://img.shields.io/badge/BSC_Testnet-Deployed_%26_Verified-F0B90B?style=for-the-badge)](https://testnet.bscscan.com/address/0xfa80515136Fc8CB2db3b25C317A1c9a04bcD3536)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](./LICENSE)
 
-*Scan any token for rug pulls. Monitor your entire wallet 24/7. Deposit into a protected vault earning Venus yield. All powered by real on-chain data + AI analysis.*
+*Autonomous AI portfolio guardian and trading intelligence on BNB Chain. Scan tokens for rug pulls, monitor your wallet 24/7, earn Venus yield with AI protection. Powered by Multi-Agent LLM reasoning + on-chain execution.*
 
-**🌐 [Live App](https://aegis-protocol-1.vercel.app/) · 🎥 [Demo Video](https://youtu.be/zEeFEduh6eg) · 📜 [Verified Contracts](https://testnet.bscscan.com/address/0xfa80515136Fc8CB2db3b25C317A1c9a04bcD3536) · 🐦 [Twitter](https://x.com/aegisguardian_)**
+**🌐 [Live App](https://jarvisbnb.xyz/) · 🎥 [Demo Video](https://youtu.be/zEeFEduh6eg) · 📜 [Verified Contracts](https://testnet.bscscan.com/address/0xfa80515136Fc8CB2db3b25C317A1c9a04bcD3536) · 🐦 [GitHub](https://github.com/Sanjaykumaar123/bnb)**
 
 </div>
 
 ---
 
-## What Is Aegis Protocol?
+## What Is JarvisBNB?
 
-Aegis Protocol is a **DeFi security toolkit** built on BNB Chain. It started as a hackathon concept for autonomous DeFi protection (**#6 in BNB Chain Good Vibes Only Hackathon, top 200**), and we're shipping it as a real product in phases — starting with the tools you can use **today**.
+JarvisBNB is an **autonomous AI portfolio guardian and trading intelligence engine** built on BNB Chain. It started as a hackathon concept for autonomous DeFi protection (**#6 in BNB Chain Good Vibes Only Hackathon, top 200**), and ships as a real product — starting with the tools you can use **today**.
 
 ### What's Live Right Now
 
@@ -248,8 +248,8 @@ All deployed and verified on BSC Testnet. 184/184 tests passing.
 
 ```bash
 # Clone
-git clone https://github.com/Tonyflam/aegis-protocol.git
-cd aegis-protocol && npm install --legacy-peer-deps
+git clone https://github.com/Sanjaykumaar123/bnb.git
+cd bnb && npm install --legacy-peer-deps
 
 # Run tests (184 passing)
 npx hardhat test
@@ -268,16 +268,17 @@ npx hardhat run scripts/deploy.ts --network bscTestnet
 ## 📂 Project Structure
 
 ```
-aegis-protocol/
+jarvisbnb/
 ├── contracts/           # 7 Solidity contracts (2,660 LOC)
-├── agent/               # AI agent engine (3,473 LOC)
+├── agent/               # Multi-agent AI engine (3,473 LOC)
 ├── bot/                 # Telegram bot (554 LOC)
 ├── frontend/            # Next.js 14 app (5,241 LOC)
 │   └── src/app/
 │       ├── scanner/     # Token Scanner
 │       ├── guardian/    # Guardian Shield
 │       ├── vault/       # Protected Vault
-│       └── api/         # guardian, scan, vault, telegram, wallet
+│       ├── portfolio/   # Portfolio Analytics Dashboard
+│       └── api/         # guardian, scan, vault, telegram, wallet, portfolio
 ├── test/                # 184 tests (2,317 LOC)
 └── scripts/             # Deploy + demo scripts
 ```
@@ -288,10 +289,10 @@ aegis-protocol/
 
 <div align="center">
 
-**Aegis Protocol by [Uniq Minds](https://x.com/uniq_minds) · 🏆 #6 — BNB Chain Good Vibes Only Hackathon**
+**JarvisBNB by [Uniq Minds](https://x.com/uniq_minds) · 🏆 #6 — BNB Chain Good Vibes Only Hackathon**
 
-*Scan it. Monitor it. Protect it. — DeFi security for BNB Chain.*
+*Autonomous AI Portfolio Guardian & Trading Intelligence — DeFi security for BNB Chain.*
 
-[Live App](https://aegis-protocol-1.vercel.app/) · [$UNIQ Token](https://bscscan.com/token/0xdd5f3e8c2cfc8444fac46744d0a4a85df03d7777) · [Twitter](https://x.com/aegisguardian_) · [Telegram Bot](https://t.me/aegis_protocol_bot) · [Roadmap](./ROADMAP.md)
+[Live App](https://jarvisbnb.xyz/) · [$UNIQ Token](https://bscscan.com/token/0xdd5f3e8c2cfc8444fac46744d0a4a85df03d7777) · [Twitter](https://x.com/uniq_minds) · [Telegram Bot](https://t.me/aegis_protocol_bot) · [GitHub](https://github.com/Sanjaykumaar123/bnb)
 
 </div>

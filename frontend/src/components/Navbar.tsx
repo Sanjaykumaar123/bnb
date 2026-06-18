@@ -33,10 +33,10 @@ export default function Navbar() {
         <div className="h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <Image src="/logo.png" alt="Aegis Protocol" width={36} height={36} className="h-8 w-8 object-contain" priority />
+            <Image src="/logo.png" alt="JarvisBNB" width={36} height={36} className="h-8 w-8 object-contain" priority />
             <div className="leading-tight">
-              <span className="text-base font-semibold tracking-tight text-white">Aegis</span>
-              <span className="text-base font-light tracking-tight text-white ml-0.5">Protocol</span>
+              <span className="text-base font-semibold tracking-tight text-white">Jarvis</span>
+              <span className="text-base font-light tracking-tight" style={{ color: "var(--bnb)" }}>BNB</span>
             </div>
           </Link>
 

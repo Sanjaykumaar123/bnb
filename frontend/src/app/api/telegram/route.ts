@@ -77,7 +77,7 @@ function formatAlertMessage(
     lines.push(``);
   }
 
-  lines.push(`<a href="https://aegisguardian.xyz/guardian">View Full Report →</a>`);
+  lines.push(`<a href="https://jarvisbnb.xyz/guardian">View Full Report →</a>`);
 
   return lines.join("\n");
 }
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
               `• Liquidity pull alerts`,
               `• Dev wallet movements`,
               ``,
-              `<a href="https://aegisguardian.xyz/guardian">Open Guardian Shield →</a>`,
+              `<a href="https://jarvisbnb.xyz/guardian">Open Guardian Shield →</a>`,
             ].join("\n"),
           );
         }

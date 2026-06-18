@@ -10,25 +10,25 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://aegisguardian.xyz"),
-  title: "Aegis Protocol — AI-Powered DeFi Guardian on BNB Chain",
+  metadataBase: new URL("https://jarvisbnb.xyz"),
+  title: "JarvisBNB — Autonomous AI Portfolio Guardian & Trading Intelligence on BNB Chain",
   description:
-    "Autonomous AI agent that monitors your DeFi positions on BNB Chain 24/7, detects risks in real-time using LLM reasoning + PancakeSwap DEX verification, and executes protective on-chain transactions.",
-  keywords: ["DeFi", "AI Agent", "BNB Chain", "PancakeSwap", "DeFi Guardian", "Autonomous Agent", "Smart Contract", "Risk Management"],
+    "JarvisBNB is an autonomous AI portfolio guardian and trading intelligence engine on BNB Chain. Monitor wallets 24/7, scan tokens for rug pulls, and earn protected Venus yield — all powered by multi-agent AI reasoning.",
+  keywords: ["JarvisBNB", "DeFi", "AI Agent", "BNB Chain", "PancakeSwap", "DeFi Guardian", "Autonomous Agent", "Smart Contract", "Risk Management", "Portfolio Analytics"],
   authors: [{ name: "Uniq Minds" }],
   openGraph: {
-    title: "Aegis Protocol by Uniq Minds — AI-Powered DeFi Guardian",
-    description: "Autonomous AI agent protecting your DeFi positions on BNB Chain 24/7. LLM reasoning + PancakeSwap DEX verification + on-chain execution.",
-    url: "https://aegisguardian.xyz",
-    siteName: "Aegis Protocol",
+    title: "JarvisBNB — Autonomous AI Portfolio Guardian on BNB Chain",
+    description: "JarvisBNB: Autonomous AI portfolio guardian & trading intelligence on BNB Chain. LLM reasoning + PancakeSwap DEX verification + on-chain execution.",
+    url: "https://jarvisbnb.xyz",
+    siteName: "JarvisBNB",
     type: "website",
     locale: "en_US",
-    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Aegis Protocol — AI-Powered DeFi Guardian" }],
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "JarvisBNB — Autonomous AI Portfolio Guardian" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Aegis Protocol by Uniq Minds — AI-Powered DeFi Guardian",
-    description: "Autonomous AI agent protecting your DeFi positions on BNB Chain 24/7. $UNIQ token utility. LLM reasoning + PancakeSwap DEX verification.",
+    title: "JarvisBNB — Autonomous AI Portfolio Guardian on BNB Chain",
+    description: "JarvisBNB: Autonomous AI guardian protecting your DeFi portfolio on BNB Chain 24/7. $UNIQ token utility. Multi-agent LLM reasoning + PancakeSwap verification.",
     images: ["/og-image.svg"],
   },
   icons: {

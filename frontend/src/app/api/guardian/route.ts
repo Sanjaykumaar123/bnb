@@ -48,7 +48,7 @@ async function pushTelegramAlerts(address: string, alerts: Alert[]): Promise<voi
     lines.push(`\u{1F7E1} <b>${a.title}</b>`);
     lines.push(`   ${a.description}`, "");
   }
-  lines.push(`<a href="https://aegisguardian.xyz/guardian">View Full Report \u2192</a>`);
+  lines.push(`<a href="https://jarvisbnb.xyz/guardian">View Full Report \u2192</a>`);
 
   try {
     await fetch(`${TG_API}/sendMessage`, {

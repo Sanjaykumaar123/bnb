@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Token Scanner — Instant Rug Pull Detection | Aegis Protocol",
+  title: "Token Scanner — Instant Rug Pull Detection | JarvisBNB",
   description:
-    "Scan any BNB Chain token instantly. Detect honeypots, hidden mints, liquidity locks, ownership renouncement, and smart contract risks before you buy.",
+    "Scan any BNB Chain token instantly with JarvisBNB. Detect honeypots, hidden mints, liquidity locks, ownership renouncement, and smart contract risks before you buy.",
   openGraph: {
-    title: "Token Scanner — Instant Rug Pull Detection | Aegis Protocol",
+    title: "Token Scanner — Instant Rug Pull Detection | JarvisBNB",
     description:
       "Scan any BSC token for honeypots, hidden owners, and contract risks. Free and instant.",
-    url: "https://aegisguardian.xyz/scanner",
+    url: "https://jarvisbnb.xyz/scanner",
   },
 };
 

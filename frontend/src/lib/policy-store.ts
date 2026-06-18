@@ -107,7 +107,7 @@ export async function parsePolicy(instruction: string): Promise<StructuredRule> 
         : "https://api.groq.com/openai/v1/chat/completions";
       const model = isOpenAI ? "gpt-4o-mini" : (process.env.AI_MODEL || "llama-3.3-70b-versatile");
 
-      const systemPrompt = `You are Aegis Protocol's natural language guardian policy parser. 
+      const systemPrompt = `You are JarvisBNB's natural language guardian policy parser. 
 Convert the user's DeFi instructions into a structured executable JSON policy object.
 Supported values:
 - action: "emergency_withdraw", "rebalance", "alert", "stop_loss", "take_profit", "sell", "buy", "hedge"

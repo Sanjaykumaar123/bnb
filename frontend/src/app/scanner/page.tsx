@@ -175,7 +175,7 @@ function ScanResultCard({ result, showShare = true }: { result: ScanResult; show
       topFlags ? `\nFlags: ${topFlags}` : "",
       `\nTax: ${result.buyTax.toFixed(1)}% buy / ${result.sellTax.toFixed(1)}% sell`,
       `\nLiquidity: ${formatUsd(result.liquidityUsd)}`,
-      `\n\n🛡️ Scanned with Aegis Protocol`,
+      `\n\n🤖 Scanned with JarvisBNB`,
     ].filter(Boolean).join("");
     const url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(lines)}`;
     window.open(url, "_blank", "noopener,noreferrer");
