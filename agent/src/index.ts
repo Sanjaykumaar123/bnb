@@ -24,6 +24,7 @@ import {
   SupervisorAgent 
 } from "./multi-agent";
 import { DecisionTimelineBuilder, DecisionTimelineStore } from "./decision-timeline";
+import { CMCSkillsProvider } from "./cmc-skills";
 import * as fs from "fs";
 
 dotenv.config({ path: "../.env" });
@@ -534,6 +535,66 @@ class AegisAgent {
     tlBuilder.addStep("decision", "Decision", `${threat.suggestedAction} — Threat: ${threat.threatDetected}`, { action: threat.suggestedAction, threatDetected: threat.threatDetected, severity: ["NONE","LOW","MEDIUM","HIGH","CRITICAL"][threat.severity], confidence: threat.confidence, riskScore: riskSnapshot.overallRisk }, threat.reasoning);
     tlBuilder.addStep("execution", "Execution", CONFIG.dryRun ? "Dry run — no on-chain tx" : `Provider: ${process.env.TWAK_ENABLED === "true" ? "Trust Wallet Agent Kit" : "Legacy Executor"}`, { dryRun: CONFIG.dryRun, provider: process.env.TWAK_ENABLED === "true" ? "twak" : "legacy" });
     tlBuilder.addStep("transaction", "Transaction", decisionTx ? `On-chain: ${decisionTx}` : "No transaction (dry run or monitoring only)", { txHash: decisionTx || "", status: CONFIG.dryRun ? "dry_run" : decisionTx ? "executed" : "skipped" });
+
+    // ─── Phase 5: AUTONOMOUS TRADE (CMC Skills + TWAK) ────
+    // Only executes when AUTONOMOUS_TRADING=true and DRY_RUN=false
+    let tradeTxHash: string | null = null;
+    const autonomousEnabled = process.env.AUTONOMOUS_TRADING === "true" && !CONFIG.dryRun;
+    if (autonomousEnabled) {
+      console.log("\n🤖 Phase 5: AUTONOMOUS TRADE — CMC Skills + TWAK execution...");
+      try {
+        // Fetch CMC Skills signals for trade decision enrichment
+        const cmcSkills = new CMCSkillsProvider();
+        const skills = await cmcSkills.fetchSkills("BNB");
+        console.log(`  CMC Momentum: RSI=${skills.momentum.rsi} Signal=${skills.momentum.signal} Regime=${skills.regime.regime}`);
+        console.log(`  CMC Sentiment: social=${skills.sentiment.socialScore} divergence=${skills.sentiment.divergence}`);
+        if (skills.sentiment.divergence) console.log(`  ⚠️  ${skills.sentiment.alert}`);
+        if (skills.usedX402) console.log(`  💳 x402 micropayment used for data access`);
+
+        // Guardrail checks (competition rules)
+        const maxDrawdownPct = parseInt(process.env.MAX_DRAWDOWN_PCT || "25");
+        const dailyTradeLimit = parseInt(process.env.DAILY_TRADE_LIMIT || "10");
+        const todayTrades = this.executor.getExecutionLog().filter(
+          e => e.type === "trade" && Date.now() - e.timestamp < 86_400_000
+        ).length;
+
+        if (todayTrades >= dailyTradeLimit) {
+          console.log(`  ⛔ Daily trade limit reached (${todayTrades}/${dailyTradeLimit}) — skipping`);
+        } else if (riskSnapshot.overallRisk > maxDrawdownPct * 3) {
+          console.log(`  ⛔ Drawdown guard: risk=${riskSnapshot.overallRisk}/100 > threshold — skipping trade`);
+        } else {
+          // Execute trade if CMC Skills + threat agree
+          const shouldStopLoss = threat.suggestedAction === SuggestedAction.STOP_LOSS
+            && skills.momentum.signal === "SELL"
+            && threat.severity >= RiskLevel.HIGH;
+
+          const shouldRebalance = threat.suggestedAction === SuggestedAction.REBALANCE
+            && (skills.regime.regime === "volatile" || skills.sentiment.divergence);
+
+          if (shouldStopLoss && watchedAddresses.length > 0) {
+            console.log(`  🛑 Stop-loss triggered — swapping BNB → USDT via TWAK`);
+            const position = await this.monitor.getPosition(watchedAddresses[0]);
+            if (position && position.depositedBNB > 0n) {
+              const swapAmt = position.depositedBNB / 2n; // 50% position reduction
+              tradeTxHash = await this.executor.getWalletProvider().swapAssets(
+                ethers.ZeroAddress, // BNB
+                "0x55d398326f99059fF775485246999027B3197955", // USDT
+                swapAmt
+              ) as string;
+              console.log(`  ✅ Stop-loss swap: ${tradeTxHash}`);
+              tlBuilder.addStep("trade", "Autonomous Trade", `Stop-loss: BNB→USDT ${ethers.formatEther(swapAmt)} BNB via TWAK`, { txHash: tradeTxHash, action: "stop_loss", provider: "TWAK" }, `CMC RSI=${skills.momentum.rsi}, regime=${skills.regime.regime}`);
+            }
+          } else if (shouldRebalance) {
+            console.log(`  ⚖️  Rebalancing triggered — ${skills.regime.switchStrategy}`);
+            tlBuilder.addStep("trade", "Autonomous Trade", `Rebalance signal: ${skills.regime.switchStrategy}`, { action: "rebalance", regime: skills.regime.regime }, skills.sentiment.alert);
+          } else {
+            console.log(`  ✅ No trade needed — CMC Skills=${skills.momentum.signal}, Regime=${skills.regime.regime}`);
+          }
+        }
+      } catch (err: any) {
+        console.warn(`[Phase 5] Autonomous trade error: ${err.message}`);
+      }
+    }
 
     // ─── Persist Timeline ─────────────────────────────────
     const watchedAddr0 = watchedAddresses[0] || ethers.ZeroAddress;

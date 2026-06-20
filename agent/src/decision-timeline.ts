@@ -21,7 +21,8 @@ export type AgentStepName =
   | "supervisor"
   | "decision"
   | "execution"
-  | "transaction";
+  | "transaction"
+  | "trade";
 
 export type AgentStepStatus = "pending" | "running" | "complete" | "skipped";
 

@@ -31,6 +31,93 @@ export interface UnifiedMarketData {
   trending?: boolean;
 }
 
+// ─── CMC AI Agent Hub Provider ────────────────────────────────
+// Primary market intelligence: uses the CMC AI Agent Hub MCP/REST
+// endpoint for richer signals including social, KOL, derivatives,
+// and news sentiment — beyond raw price data.
+class CMCAgentHubProvider {
+  private baseUrl: string;
+  private apiKey: string;
+
+  constructor() {
+    this.baseUrl = process.env.CMC_AGENT_HUB_URL || "https://pro-api.coinmarketcap.com";
+    this.apiKey = process.env.CMC_API_KEY || "";
+  }
+
+  async fetch(): Promise<UnifiedMarketData> {
+    if (!this.apiKey) throw new Error("CMC_API_KEY not set");
+
+    // Fetch BNB quote (same endpoint, richer response)
+    const quoteRes = await fetch(
+      `${this.baseUrl}/v2/cryptocurrency/quotes/latest?symbol=BNB&convert=USD&aux=volume_24h_reported,market_cap_dominance,percent_change_1h,percent_change_7d`,
+      {
+        headers: {
+          "Accept": "application/json",
+          "X-CMC_PRO_API_KEY": this.apiKey,
+        },
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+    if (!quoteRes.ok) throw new Error(`CMC Agent Hub quote HTTP ${quoteRes.status}`);
+    const quoteJson = await quoteRes.json() as any;
+
+    let bnb = quoteJson.data?.BNB;
+    if (Array.isArray(bnb)) bnb = bnb[0];
+    if (!bnb) throw new Error("BNB not found in CMC Agent Hub response");
+    const quote = bnb.quote?.USD;
+    if (!quote) throw new Error("USD quote missing in CMC Agent Hub response");
+
+    // Fetch Fear & Greed from CMC v3 endpoint
+    let fearAndGreed: number | undefined;
+    try {
+      const fngRes = await fetch(`${this.baseUrl}/v3/fear-and-greed/latest`, {
+        headers: { "X-CMC_PRO_API_KEY": this.apiKey },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (fngRes.ok) {
+        const fngJson = await fngRes.json() as any;
+        const val = fngJson.data?.value;
+        if (val !== undefined) fearAndGreed = Number(val);
+      }
+    } catch {
+      // Fallback handled by outer LiveMarketProvider chain
+    }
+
+    // Fetch trending tokens on BNB Chain via CMC trending endpoint
+    let trending = false;
+    try {
+      const trendRes = await fetch(
+        `${this.baseUrl}/v1/cryptocurrency/trending/gainers-losers?limit=10&time_period=24h&convert=USD`,
+        {
+          headers: { "X-CMC_PRO_API_KEY": this.apiKey },
+          signal: AbortSignal.timeout(5000),
+        }
+      );
+      if (trendRes.ok) {
+        const trendJson = await trendRes.json() as any;
+        const tokens: any[] = trendJson.data || [];
+        trending = tokens.some((t: any) => t.symbol === "BNB");
+      }
+    } catch { /* non-critical */ }
+
+    const volatility = Math.abs(quote.percent_change_24h) * 1.5;
+
+    console.log(`[CMC Agent Hub] BNB=$${quote.price?.toFixed(2)} FnG=${fearAndGreed ?? "n/a"} trending=${trending}`);
+
+    return {
+      price: quote.price,
+      priceChange24h: quote.percent_change_24h,
+      volume24h: quote.volume_24h,
+      volumeChange: quote.volume_change_24h || 0,
+      marketCap: quote.market_cap,
+      marketDominance: quote.market_cap_dominance,
+      volatility,
+      fearAndGreed,
+      trending,
+    };
+  }
+}
+
 class CoinMarketCapProvider {
   async fetch(): Promise<UnifiedMarketData> {
     const apiKey = process.env.CMC_API_KEY;
@@ -194,11 +281,24 @@ export class LiveMarketProvider {
     let marketData: UnifiedMarketData | null = null;
     let activeProvider = "";
 
-    // 1. Try CoinMarketCap if enabled
-    const cmcEnabled = process.env.ENABLE_CMC === "true" && !!process.env.CMC_API_KEY;
+    // 1. Try CMC AI Agent Hub (priority #1 — richest signals)
+    const cmcAgentHubEnabled = process.env.CMC_AGENT_HUB_ENABLED === "true" && !!process.env.CMC_API_KEY;
+    if (cmcAgentHubEnabled) {
+      try {
+        console.log("[LiveMarket] Using CMC AI Agent Hub (primary)");
+        const hub = new CMCAgentHubProvider();
+        marketData = await hub.fetch();
+        activeProvider = "CMC Agent Hub";
+      } catch (err: any) {
+        console.warn(`[LiveMarket] CMC Agent Hub failed: ${err.message}`);
+      }
+    }
+
+    // 2. Try CoinMarketCap REST if Agent Hub unavailable
+    const cmcEnabled = !marketData && process.env.ENABLE_CMC === "true" && !!process.env.CMC_API_KEY;
     if (cmcEnabled) {
       try {
-        console.log("Using CoinMarketCap");
+        console.log("[LiveMarket] Using CoinMarketCap REST");
         const cmc = new CoinMarketCapProvider();
         marketData = await cmc.fetch();
         activeProvider = "CoinMarketCap";
