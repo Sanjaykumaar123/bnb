@@ -25,6 +25,7 @@ import {
 } from "./multi-agent";
 import { DecisionTimelineBuilder, DecisionTimelineStore } from "./decision-timeline";
 import { CMCSkillsProvider } from "./cmc-skills";
+import { TradingOrchestrator } from "./trading-orchestrator";
 import * as fs from "fs";
 
 dotenv.config({ path: "../.env" });
@@ -128,6 +129,7 @@ class AegisAgent {
   private pancakeSwap: PancakeSwapProvider;
   private venusMonitor: VenusMonitor;
   private stopLossMonitor: StopLossMonitor;
+  private tradingOrchestrator: TradingOrchestrator;
   private isRunning = false;
   private cycleCount = 0;
   private startTime = Date.now();
@@ -182,7 +184,11 @@ class AegisAgent {
       },
       this.monitor.getProvider()
     );
+
+    // Initialize Trading Orchestrator
+    this.tradingOrchestrator = new TradingOrchestrator();
   }
+
 
   /**
    * Start the autonomous agent loop
@@ -537,60 +543,25 @@ class AegisAgent {
     tlBuilder.addStep("transaction", "Transaction", decisionTx ? `On-chain: ${decisionTx}` : "No transaction (dry run or monitoring only)", { txHash: decisionTx || "", status: CONFIG.dryRun ? "dry_run" : decisionTx ? "executed" : "skipped" });
 
     // ─── Phase 5: AUTONOMOUS TRADE (CMC Skills + TWAK) ────
-    // Only executes when AUTONOMOUS_TRADING=true and DRY_RUN=false
+    // Executes when AUTONOMOUS_TRADING=true
     let tradeTxHash: string | null = null;
-    const autonomousEnabled = process.env.AUTONOMOUS_TRADING === "true" && !CONFIG.dryRun;
+    const autonomousEnabled = process.env.AUTONOMOUS_TRADING === "true";
     if (autonomousEnabled) {
-      console.log("\n🤖 Phase 5: AUTONOMOUS TRADE — CMC Skills + TWAK execution...");
       try {
-        // Fetch CMC Skills signals for trade decision enrichment
         const cmcSkills = new CMCSkillsProvider();
         const skills = await cmcSkills.fetchSkills("BNB");
-        console.log(`  CMC Momentum: RSI=${skills.momentum.rsi} Signal=${skills.momentum.signal} Regime=${skills.regime.regime}`);
-        console.log(`  CMC Sentiment: social=${skills.sentiment.socialScore} divergence=${skills.sentiment.divergence}`);
-        if (skills.sentiment.divergence) console.log(`  ⚠️  ${skills.sentiment.alert}`);
-        if (skills.usedX402) console.log(`  💳 x402 micropayment used for data access`);
 
-        // Guardrail checks (competition rules)
-        const maxDrawdownPct = parseInt(process.env.MAX_DRAWDOWN_PCT || "25");
-        const dailyTradeLimit = parseInt(process.env.DAILY_TRADE_LIMIT || "10");
-        const todayTrades = this.executor.getExecutionLog().filter(
-          e => e.type === "trade" && Date.now() - e.timestamp < 86_400_000
-        ).length;
-
-        if (todayTrades >= dailyTradeLimit) {
-          console.log(`  ⛔ Daily trade limit reached (${todayTrades}/${dailyTradeLimit}) — skipping`);
-        } else if (riskSnapshot.overallRisk > maxDrawdownPct * 3) {
-          console.log(`  ⛔ Drawdown guard: risk=${riskSnapshot.overallRisk}/100 > threshold — skipping trade`);
-        } else {
-          // Execute trade if CMC Skills + threat agree
-          const shouldStopLoss = threat.suggestedAction === SuggestedAction.STOP_LOSS
-            && skills.momentum.signal === "SELL"
-            && threat.severity >= RiskLevel.HIGH;
-
-          const shouldRebalance = threat.suggestedAction === SuggestedAction.REBALANCE
-            && (skills.regime.regime === "volatile" || skills.sentiment.divergence);
-
-          if (shouldStopLoss && watchedAddresses.length > 0) {
-            console.log(`  🛑 Stop-loss triggered — swapping BNB → USDT via TWAK`);
-            const position = await this.monitor.getPosition(watchedAddresses[0]);
-            if (position && position.depositedBNB > 0n) {
-              const swapAmt = position.depositedBNB / 2n; // 50% position reduction
-              tradeTxHash = await this.executor.getWalletProvider().swapAssets(
-                ethers.ZeroAddress, // BNB
-                "0x55d398326f99059fF775485246999027B3197955", // USDT
-                swapAmt
-              ) as string;
-              console.log(`  ✅ Stop-loss swap: ${tradeTxHash}`);
-              tlBuilder.addStep("trade", "Autonomous Trade", `Stop-loss: BNB→USDT ${ethers.formatEther(swapAmt)} BNB via TWAK`, { txHash: tradeTxHash, action: "stop_loss", provider: "TWAK" }, `CMC RSI=${skills.momentum.rsi}, regime=${skills.regime.regime}`);
-            }
-          } else if (shouldRebalance) {
-            console.log(`  ⚖️  Rebalancing triggered — ${skills.regime.switchStrategy}`);
-            tlBuilder.addStep("trade", "Autonomous Trade", `Rebalance signal: ${skills.regime.switchStrategy}`, { action: "rebalance", regime: skills.regime.regime }, skills.sentiment.alert);
-          } else {
-            console.log(`  ✅ No trade needed — CMC Skills=${skills.momentum.signal}, Regime=${skills.regime.regime}`);
-          }
-        }
+        tradeTxHash = await this.tradingOrchestrator.evaluateAndExecuteTrade(
+          marketData,
+          skills,
+          riskSnapshot,
+          threat,
+          this.executor.getWalletProvider(),
+          this.executor,
+          tlBuilder,
+          watchedAddresses,
+          CONFIG.dryRun
+        );
       } catch (err: any) {
         console.warn(`[Phase 5] Autonomous trade error: ${err.message}`);
       }

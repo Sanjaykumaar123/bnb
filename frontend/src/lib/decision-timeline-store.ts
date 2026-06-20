@@ -15,7 +15,8 @@ export type AgentStepName =
   | "supervisor"
   | "decision"
   | "execution"
-  | "transaction";
+  | "transaction"
+  | "trade";
 
 export interface AgentStep {
   step: AgentStepName;
