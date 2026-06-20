@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useWalletContext } from "../lib/WalletContext";
 import { usePublicContractData } from "../lib/useContracts";
 import {
-  Wallet, Search, Menu, X, Eye, Lock, BarChart3, Bot,
+  Wallet, Search, Menu, X, Eye, Lock, BarChart3,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -15,7 +15,6 @@ const NAV_LINKS = [
   { href: "/guardian", label: "Guardian Shield", icon: Eye },
   { href: "/vault", label: "Vault", icon: Lock },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/agent", label: "AI Brain", icon: Bot, highlight: true },
 ];
 
 export default function Navbar() {
@@ -52,16 +51,9 @@ export default function Navbar() {
                   className={`nav-link flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                     isActive ? "nav-link-active" : ""
                   }`}
-                  style={(link as { highlight?: boolean }).highlight && !isActive ? {
-                    background:"rgba(0,212,245,0.08)", color:"#00d4f5",
-                    border:"1px solid rgba(0,212,245,0.2)", boxShadow:"0 0 12px rgba(0,212,245,0.1)"
-                  } : {}}
                 >
                   <link.icon className="w-3.5 h-3.5" />
                   {link.label}
-                  {(link as { highlight?: boolean }).highlight && (
-                    <span style={{ width:5, height:5, borderRadius:"50%", background:"#22c55e", boxShadow:"0 0 6px #22c55e", display:"inline-block" }} />
-                  )}
                 </Link>
               );
             })}
